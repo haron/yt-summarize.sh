@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-YT_SUMMARIZE_PROMPT="${YT_SUMMARIZE_PROMPT:-Above are the subtitles from Youtube video. Please summarize it in a bullet list of 5-10 key points. Be concise, but do not omit important details.}"
+YT_SUMMARIZE_PROMPT="${YT_SUMMARIZE_PROMPT:-Above are the subtitles from Youtube video. Summarize it in 2-3 paragraphs. Be concise, but do not omit important details.}"
+YT_SUMMARIZE_LANG="${YT_SUMMARIZE_LANG:-en}"
 URL="${1:-""}"
 shift
 
@@ -14,6 +15,10 @@ if ! which uvx >/dev/null 2>&1; then
     exit 1
 fi
 
+for TOOL in ttok yt-dlp llm; do
+    uv tool install -q $TOOL;
+done
+
 if ! uvx llm keys | grep -q openai; then
     echo "Set your OpenAI API key with the following command: uvx llm keys set openai"
     exit 1
@@ -22,7 +27,10 @@ fi
 TEMPDIR="$(mktemp -d)"
 # To use cookies from your browser, use `--cookies-from-browser ...` (more info in `yt-dlp --help`)
 uvx -q \
-    yt-dlp --paths "$TEMPDIR" --quiet --no-warnings --skip-download --write-auto-subs --convert-subs srt "$URL" "$@"
+    yt-dlp --paths "$TEMPDIR" \
+        --quiet --no-warnings --skip-download --write-auto-subs --convert-subs srt \
+        --sub-langs "$YT_SUMMARIZE_LANG" \
+        "$URL" "$@"
 
 cat "$TEMPDIR/"*.srt \
     | tr -d '\r' \
