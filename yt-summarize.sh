@@ -2,6 +2,7 @@
 
 YT_SUMMARIZE_PROMPT="${YT_SUMMARIZE_PROMPT:-Above are the subtitles from Youtube video. Summarize it in 2-3 paragraphs. Be concise, but do not omit important details.}"
 YT_SUMMARIZE_LANG="${YT_SUMMARIZE_LANG:-en}"
+YT_TOKENS_LIMIT="${YT_TOKENS_LIMIT:-15000}" # 15K tokens is roughly 1 hour of talking head
 URL="${1:-""}"
 shift
 
@@ -38,8 +39,8 @@ cat "$TEMPDIR/"*.srt \
     | grep -Ev '^[0-9]*$' \
     | grep -Ev '^ *$' \
     | uniq \
-    | uvx -q ttok -t 15000 \
-    | uvx -q llm -s "$YT_SUMMARIZE_PROMPT"
-# 15 000 tokens is roughly 1 hour of talking head
+    | uvx -q ttok -t "$YT_TOKENS_LIMIT" \
+    | uvx -q llm -s "$YT_SUMMARIZE_PROMPT" \
+    | fmt -w 70
 
 rm -rf "$TEMPDIR"
